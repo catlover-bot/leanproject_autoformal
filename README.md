@@ -156,3 +156,176 @@ Lean定理 → GPTで自然語に変換 → サブステップ化 → tacticに�
 > 世界的にも珍しい「**形式知ベースのLLM評価・活用システム**」。
 
 🧪＝LLM + 数学証明 + Verification = 次世代AIの知性評価基盤。
+
+
+🥷 Jake起動完了──  
+Autoformalの**完全ワークフロー**を、実装ベースに基づいて図解＆詳細解説していくぜ⚙️📚
+
+---
+
+# 🚀 Autoformal ワークフロー詳細ガイド
+
+---
+
+## 📘 全体概要
+
+```txt
+非形式的証明（自然言語 + 数式）  
+      │  
+      ▼  
+Step1. GPTで自然語処理 (任意)  
+      │  
+      ▼  
+Step2. ステップ分割（annotation）  
+      │  
+      ▼  
+Step3. tacticマッピング（map）  
+      │  
+      ▼  
+Step4. Lean4による形式検証（verify）  
+      │  
+      ▼  
+Step5. エラーなら再学習（feedback loop）  
+      │  
+      ▼  
+Step6. 結果保存 → 成功率解析（log & graph）  
+```
+
+---
+
+## 🔍 ステップ別解説
+
+---
+
+### 🧠 **Step1. 自然文への変換（任意）**
+📄 ファイル: `convert_theorems_to_natural.py`
+
+- 入力: `theorems_test_full.txt`（Lean定理形式）
+- 出力: `naturalized.txt`（自然言語文）
+- 使う理由:
+  - miniF2F や textbook データが Lean 定理の形でしかない場合
+  - 日本語・数学式の非形式文にしてLLM向けに最適化するため
+
+---
+
+### ✂️ **Step2. ステップ分割（CoT）**
+📄 ファイル: `annotation_tool.py` or `splitter.py`
+
+- `split_template.txt`（プロンプト）で「意味ある論理単位に分割して」と指示
+- `annotation_tool.py` は対話CLIで `.json` へ変換
+- 出力形式（例）：
+
+```json
+{
+  "original": "△ABC の面積を求めよ。A=... B=...",
+  "steps": [
+    "底辺 AB を求める",
+    "高さを求める",
+    "面積公式に代入する"
+  ]
+}
+```
+
+---
+
+### ⚙️ **Step3. tacticマッピング**
+📄 ファイル: `mapper.py`
+
+- 各ステップに対して GPT にこう聞く：
+
+```txt
+Lean4の証明戦術(tactic)で1行のコマンドを出して：
+ステップ: 高さを求める → tactic: `rw [height_formula]`
+```
+
+- `map_template.txt` のテンプレで指示内容を統一
+
+---
+
+### 🧪 **Step4. Leanで検証**
+📄 ファイル: `verifier.py`
+
+- `LeanServer` or Lean CLI で `.lean` 形式に変換
+- `example1.lean` のような形式で実行してチェック：
+
+```lean
+theorem triangle_area : True := by
+  rw [height_formula]
+  norm_num
+```
+
+- 結果：
+  - ✅ success（証明通過）
+  - ❌ error（unknown tactic, subgoals remain）
+
+---
+
+### 🔁 **Step5. フィードバックループ（誤り駆動改善）**
+📄 ファイル: `loop.py`
+
+- 最大5回まで再試行
+- `feedback_template.txt` を使用し、エラー文をプロンプトに再注入
+
+```text
+前回生成した tactic に以下のエラーがありました：
+"unknown tactic 'rw'"
+修正後の tactic を提示してください。
+```
+
+→ GPT が改善案を生成
+
+---
+
+### 🧾 **Step6. ログ収集・分析・可視化**
+📄 ファイル: `analyze_results.py`
+
+- `results/result_log.jsonl` に成功/失敗・ループ回数など記録
+- 出力グラフ：
+
+```
+🟢 成功率の円グラフ（何％成功？）
+📊 ループ回数ヒストグラム（何回で成功？）
+```
+
+---
+
+## 💡 補足機能（オプション）
+
+| モジュール | 機能 |
+|------------|------|
+| `extract_lean_statements.py` | `.lean` ファイルから `theorem ...` を抽出 |
+| `splitter.py` | GPTによる自動CoT分割（`annotation_tool.py`の自動版） |
+| `convert_theorems_to_natural.py` | 自然言語文への変換（日本語化処理） |
+
+---
+
+# 🌐 実行フロー図（図解）
+
+```
+[定理.txt or .lean]  
+       │  
+       ▼  
+ [自然語化 (任意)]  
+       │  
+       ▼  
+[ステップ分割 (annotation_tool)]  
+       │  
+       ▼  
+[splitter → mapper → verifier]  
+       │               ▲  
+       └─────┬───▶ error? ──────┘  
+             ▼  
+     feedback_template → GPT修正  
+             │  
+             ▼  
+       [loop最大5回]  
+             │  
+             ▼  
+     ✅ 成功 or ❌ 失敗 → ログ記録  
+             ▼  
+        analyze_results.py  
+             ▼  
+        📈 PNGグラフ出力  
+```
+
+---
