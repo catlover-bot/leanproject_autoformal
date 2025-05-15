@@ -328,4 +328,5 @@ theorem triangle_area : True := by
         📈 PNGグラフ出力  
 ```
 
+Wikipedia
 ---
