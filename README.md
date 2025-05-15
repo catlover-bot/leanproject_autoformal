@@ -329,4 +329,5 @@ theorem triangle_area : True := by
 ```
 
 Wikipedia
+事前学習されているからちょっと形式変える（文）
 ---
