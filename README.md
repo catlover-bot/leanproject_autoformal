@@ -135,4 +135,5 @@ Q
 miniF2F（データセット）から自然言語による証明文を生成させる。  
 つまり、lean形式→自然言語してLLMによるLean形式に変換させる。その際の評価で元のデータセットでの比較で評価を行う。
 
-仮想化：venv\Scripts\activate
+仮想化：venv\Scripts\activate  
+export OPENAI_API_KEY=""
