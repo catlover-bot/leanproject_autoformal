@@ -1,131 +1,92 @@
+以下のようなイメージで、各スクリプトがどのようにデータを受け渡しながら動くかを示します。矢印で処理の流れを追えるようにしています。
 
----
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. 定理テキストを用意                                          │
+│ ─────────────────────────────────────────────────────────────  │
+│ 「results/theorem_descriptions.txt」                         │
+│ └───┬──────────────────────────────────────────────────────────┘
+│     │
+│     ▼
+│
+│  2. Lean4証明生成＆検証スクリプト                               │
+│ ─────────────────────────────────────────────────────────────  │
+│  python scripts/batch_loop_runner.py                            │
+│    --input_txt_block results/theorem_descriptions.txt           │
+│    --output_dir     results/from_txt_logs                       │
+│                                                                 │
+│ 〔入力〕                                                          │
+│   └─ ブロック分割後の「各定理（自然言語＋形式化命題）」          │
+│                                                                 │
+│ 〔処理（各定理ごと）〕                                            │
+│   1) 自然言語説明を読み取り → Lean4 の定理文を組み立てる          │
+│   2) GPT（map_to_tactic）で「タクティック列」を生成               │
+│   3) clean_tactic で Markdown 記法を取り除きクリーン化           │
+│   4) verify_tactics で Lean4に流し込んでサブゴールが消えるか検証 │
+│       └─ 成功すれば `.lean` ファイル ⇒ `results/from_txt_logs/◯◯.lean` に出力
+│       └─ 成否・試行回数・タクティック列を        │
+│            `results/from_txt_logs/result_log.jsonl` に書き込む  │
+│                                                                 │
+│ 〔出力〕                                                          │
+│   ├─ 成功：`results/from_txt_logs/<定理ID>.lean`（Lean4ソース）  │
+│   └─ 全ブロックの結果ログ：                                   │
+│        `results/from_txt_logs/result_log.jsonl`                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  3. サマリ＆可視化スクリプト                                     │
+│ ─────────────────────────────────────────────────────────────  │
+│  a) サンプル抽出用                      (簡易レポート)            │
+│     python scripts/analyze_results.py                             │
+│     ├─ 「成功定理」「失敗定理」をそれぞれ `samples/` フォルダへ  │
+│     └─ コンソールに「成功件数／失敗件数／成功率」を出力          │
+│                                                                   │
+│  b) CSV＋ヒストグラム生成                 (詳細レポート)          │
+│     python scripts/analyze_results_csv.py                         │
+│     ├─ `results/from_txt_logs/analysis/summary.csv` を出力        │
+│     │    （各定理ID・成否・タクティック長・Leanコード長など）      │
+│     ├─ `results/from_txt_logs/analysis/theorem_length_hist.png`   │
+│     │    （タクティックの長さ分布を可視化）                        │
+│     └─ `results/from_txt_logs/analysis/lean_length_hist.png`      │
+│          （Lean ソース文字数の分布を可視化）                       │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
 
-##  全体構成図（Pipeline Overview）
-
-```txt
-          +---------------------------+
-          |  Wikipedia / 教科書記事   |
-          +------------+--------------+
-                       ↓
-            ① 自然言語定理テキスト生成
-               (auto_extract_wiki_proofs.py)
-                       ↓
-            ② 命題（Proposition）抽出
-               (loop.py + extract_theorem_statement)
-                       ↓
-            ③ 証明ステップ分割 (Chain-of-Thought)
-               (splitter.py)
-                       ↓
-            ④ tactic へのマッピング
-               (mapper.py)
-                       ↓
-            ⑤ Lean4 による検証
-               (verifier.py)
-                       ↓
-            ⑥ ログ保存 + CSV可視化
-               (results/wiki_logs + analyze_results_csv.py)
 ```
 
 ---
 
-##  ステップ詳細
+### フローの要点まとめ
 
-###  ① 自然言語の証明文生成（LLM）
+1. **定理テキストの準備**
 
-* ファイル: `auto_extract_wiki_proofs.py`
-* 処理:
+   * `results/theorem_descriptions.txt` に、複数ブロック（各定理）の形式化命題＋自然言語説明を記述。
 
-  * Wikipediaのカテゴリ（例: `Mathematical theorems`）から記事タイトルを自動取得
-  * 各タイトルを LLM に投げて「定理本文＋簡単な証明」テキストを生成
-  * `.json` 形式で `data/wiki_auto/` に保存
+2. **自動証明サイクル**
 
----
+   * `batch_loop_runner.py` を実行すると、
 
-###  ② 命題抽出（命題ステージの導入）
+     * 各ブロックを分割して読み込み、
+     * GPT→タクティック生成 → Lean4 検証 → 成功なら `.lean` 書き出し、
+     * 成否ログ（JSONL）を蓄積。
+   * 出力先フォルダ：`results/from_txt_logs/`
 
-* ファイル: `loop.py`（関数：`extract_theorem_statement`）
-* 処理:
+3. **レポート生成**
 
-  * LLM に「この自然言語証明文から命題（定理の主張）を抽出してLeanで表現せよ」とプロンプト
-  * `theorem my_prop : <Lean命題>` を生成
-  * 証明すべき対象が `True` でなくなる（←重要）
+   * **サンプル抽出（analyze\_results.py）**
 
----
+     * 成功／失敗それぞれの事例を `samples/` フォルダへコピーしつつ、
+     * コンソールに成功率だけざっくり表示。
+   * **CSV＋グラフ（analyze\_results\_csv.py）**
 
-###  ③ Chain-of-Thought（思考分解）ステップ
-
-* ファイル: `splitter.py`
-* 処理:
-
-  * 自然言語証明を意味のある論理的サブステップに分割
-  * 「したがって」「ゆえに」「なぜなら」などに注目して文を分割
-  * 出力は `["Step1: ..., Step2: ..."]` のリスト形式
+     * JSONL ログを読み込み、summary.csv を生成。
+     * タクティック長／Leanソース長のヒストグラム PNG を作成。
+     * 保存先：`results/from_txt_logs/analysis/`
 
 ---
 
-###  ④ tactic マッピング
-
-* ファイル: `mapper.py`
-* 処理:
-
-  * 各ステップを Lean4 の tactic に変換
-  * プロンプトで「この自然言語文はどうやって証明すればいい？」と尋ねる
-  * 出力は `["exact this", "apply that", ...]`
-
----
-
-###  ⑤ Lean4形式による検証（Verifier Loop）
-
-* ファイル: `verifier.py`
-* 処理:
-
-  * `lake build` & `lean --make` を使って実際にLeanで証明が通るかを判定
-  * 失敗した場合はエラー解析→フィードバックプロンプト→再試行（最大 N 回）
-
----
-
-###  ⑥ 結果の記録と可視化
-
-* ファイル:
-
-  * `results/wiki_logs/result_log.jsonl`
-  * `analyze_results_csv.py`
-* 処理:
-
-  * 各命題ごとに：
-
-    * 成功か？失敗か？何回の試行で成功したか？生成された tactic は？
-  * CSVやグラフにして出力（成功率推移など）
-
----
-
-## 実行順まとめ（CLI）
-
-```bash
-# 1. Wikiから自然言語証明を大量取得
-python scripts/auto_extract_wiki_proofs.py
-
-# 2. 形式化パイプラインをバッチ実行（命題抽出→証明生成→検証）
-python scripts/batch_loop_runner.py --input_dir data/wiki_auto --output_dir results/wiki_logs
-
-# 3. 結果をCSVにまとめてグラフ可視化
-python scripts/analyze_results_csv.py
-```
-
----
-
-##  特徴まとめ
-
-| 特徴                    | 内容                         |
-| --------------------- | -------------------------- |
-|  命題抽出ステージ           | `True` ではなく意味ある定理命題を動的生成   |
-|  Chain-of-Thought活用 | 論理的ステップに自動分割               |
-|  フィードバックループ         | Lean失敗時はLLMへ再問い合わせ → 修正繰返し |
-|  自動可視化              | 成功率・試行回数・トークン量などをCSV出力     |
-|  教師なし・外部知識不要        | 入力＝自然言語証明テキストだけで構成可能       |
-
----
 
 Q  
 命題を抽出する際に、一個だけを選定する？  
