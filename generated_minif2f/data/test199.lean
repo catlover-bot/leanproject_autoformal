@@ -1,4 +1,7 @@
+import Mathlib.Algebra.Order.ArithmeticMean
 import Mathlib.Data.Real.Basic
+
+open Real
 
 theorem imo_1964_p2
   (a b c : ℝ)
@@ -7,15 +10,36 @@ theorem imo_1964_p2
   (h₂ : b < a + c)
   (h₃ : a < b + c) :
   a^2 * (b + c - a) + b^2 * (c + a - b) + c^2 * (a + b - c) ≤ 3 * a * b * c :=
-by
-  have h₄ : a + b - c > 0 := by linarith
-  have h₅ : b + c - a > 0 := by linarith
-  have h₆ : c + a - b > 0 := by linarith
-  have h₇ : a^2 * (b + c - a) ≤ a^2 * (b + c - a) := le_refl _
-  have h₈ : b^2 * (c + a - b) ≤ b^2 * (c + a - b) := le_refl _
-  have h₉ : c^2 * (a + b - c) ≤ c^2 * (a + b - c) := le_refl _
-  have h₁₀ : a^2 * (b + c - a) + b^2 * (c + a - b) + c^2 * (a + b - c) ≤ a^2 * (b + c - a) + b^2 * (c + a - b) + c^2 * (a + b - c) := by linarith
-  have h₁₁ : a^2 * (b + c - a) + b^2 * (c + a - b) + c^2 * (a + b - c) ≤ a^2 * (b + c - a) + b^2 * (c + a - b) + c^2 * (a + b - c) := by linarith
-  have h₁₂ : a^2 * (b + c - a) + b^2 * (c + a - b) + c^2 * (a + b - c) ≤ 3 * a * b * c := by
-    linarith [h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁]
-  exact h₁₂
+begin
+  let x := a + b - c,
+  let y := b + c - a,
+  let z := c + a - b,
+  have hx : 0 < x := by linarith,
+  have hy : 0 < y := by linarith,
+  have hz : 0 < z := by linarith,
+  have hsum : x + y + z = a + b + c,
+  { simp [x, y, z], ring },
+  have hxyz : x * y * z = a * b * c,
+  { simp [x, y, z], ring },
+  have h₄ : a^2 * y ≤ a^2 * (y + z + x) / 3,
+  { apply mul_le_mul_of_nonneg_left,
+    { apply le_of_lt, apply AM_GM_inequality, exact ⟨hx, hy, hz⟩ },
+    { apply pow_nonneg, linarith } },
+  have h₅ : b^2 * z ≤ b^2 * (y + z + x) / 3,
+  { apply mul_le_mul_of_nonneg_left,
+    { apply le_of_lt, apply AM_GM_inequality, exact ⟨hx, hy, hz⟩ },
+    { apply pow_nonneg, linarith } },
+  have h₆ : c^2 * x ≤ c^2 * (y + z + x) / 3,
+  { apply mul_le_mul_of_nonneg_left,
+    { apply le_of_lt, apply AM_GM_inequality, exact ⟨hx, hy, hz⟩ },
+    { apply pow_nonneg, linarith } },
+  calc
+    a^2 * y + b^2 * z + c^2 * x
+        ≤ a^2 * (y + z + x) / 3 + b^2 * (y + z + x) / 3 + c^2 * (y + z + x) / 3 : by linarith
+    ... = (a^2 + b^2 + c^2) * (y + z + x) / 3 : by ring
+    ... ≤ (a + b + c)^2 * (y + z + x) / 9 : by { apply mul_le_mul_of_nonneg_right, apply AM_GM_inequality, exact ⟨h₀.1, h₀.2.1, h₀.2.2⟩, linarith }
+    ... = (a + b + c) * (a + b + c) * (y + z + x) / 9 : by ring
+    ... = (a + b + c) * (a + b + c) * (a + b + c) / 9 : by rw hsum
+    ... = (a + b + c)^3 / 9 : by ring
+    ... = 3 * a * b * c : by { rw [hxyz, mul_assoc, mul_comm (a * b * c), mul_assoc], ring }
+end

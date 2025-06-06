@@ -1,5 +1,4 @@
-import Mathlib.Algebra.Group.Defs
-import Mathlib.Tactic.Ring
+import Mathlib.Tactic
 
-theorem arithmetic_identity : 1 * 3^3 + 2 * 3^2 + 2 * 3 + 2 = 53 := by
-  ring
+theorem evaluate_expression : 1 * 3^3 + 2 * 3^2 + 2 * 3 + 2 = 53 := by
+  norm_num

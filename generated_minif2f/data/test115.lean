@@ -1,23 +1,32 @@
-import Mathlib.Data.Nat.Basic
+```lean
+import Mathlib.Data.Nat.Prime
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 open Nat
 
-theorem gcd_polynomial_bound (n : ℕ) (p : ℕ → ℕ) 
+theorem polynomial_gcd_condition (n : ℕ) (p : ℕ → ℕ) 
   (h : ∀ x, p x = x^2 - x + 41) 
-  (gcd_cond : 1 < gcd (p n) (p (n+1))) : 
-  41 ≤ n :=
+  (gcd_cond : 1 < gcd (p n) (p (n+1))) : 41 ≤ n :=
 begin
-  have h_pn : p n = n^2 - n + 41 := h n,
-  have h_pn1 : p (n+1) = (n+1)^2 - (n+1) + 41 := h (n+1),
-  rw [h_pn, h_pn1] at gcd_cond,
-  have : gcd (n^2 - n + 41) ((n+1)^2 - (n+1) + 41) = gcd (n^2 - n + 41) (2*n + 1),
-  { ring_nf,
-    rw [add_assoc, add_comm (n^2 - n), add_assoc, add_comm 41, add_assoc],
-    ring },
-  rw this at gcd_cond,
-  have : gcd (n^2 - n + 41) (2*n + 1) ≤ 41,
-  { apply gcd_le_right },
+  -- Assume for contradiction that n < 41
+  by_contradiction h₁,
+  push_neg at h₁,
+  have h₂ : n ≤ 40 := Nat.le_of_lt_succ h₁,
+  
+  -- Check the primality of p(n) for n ≤ 40
+  have prime_p : ∀ m ≤ 40, Prime (p m),
+  { intros m hm,
+    rw h,
+    interval_cases m; norm_num },
+
+  -- Since p(n) and p(n+1) are both prime, their gcd should be 1
+  have gcd_one : gcd (p n) (p (n+1)) = 1,
+  { apply Prime.gcd_eq_one_of_coprime,
+    { apply prime_p, exact h₂ },
+    { apply prime_p, linarith } },
+
+  -- This contradicts the assumption that gcd is greater than 1
   linarith,
 end
+```

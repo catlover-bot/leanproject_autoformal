@@ -1,38 +1,47 @@
-import Mathlib.Data.Real.Basic
-import Mathlib.Data.Finset
-import Mathlib.Algebra.BigOperators
+import data.real.basic
+import data.finset
+import algebra.big_operators
 
-open Finset
-open BigOperators
+open_locale big_operators
+open finset
 
-lemma sum_logb_eq_21000 :
-  (∑ k in (Icc 1 20), (Real.logb (5^k) (3^(k^2)))) * (∑ k in (Icc 1 100), (Real.logb (9^k) (25^k))) = 21000 :=
-by
-  have h1 : ∀ k ∈ Icc 1 20, Real.logb (5^k) (3^(k^2)) = k / (k^2) * Real.logb 5 3 := by
-    intros k hk
-    rw [Real.logb_pow, Real.logb_pow, mul_div_assoc, mul_comm]
-    congr
-    ring
-  have h2 : ∑ k in Icc 1 20, Real.logb (5^k) (3^(k^2)) = ∑ k in Icc 1 20, k / (k^2) * Real.logb 5 3 := by
-    apply sum_congr rfl h1
-  have h3 : ∑ k in Icc 1 20, k / (k^2) = ∑ k in Icc 1 20, 1 / k := by
-    apply sum_congr rfl
-    intros k hk
-    rw [div_eq_div_iff, mul_one]
-    exact pow_ne_zero 2 (ne_of_gt (lt_of_lt_of_le zero_lt_one (mem_Icc.1 hk).1))
-  have h4 : ∑ k in Icc 1 20, 1 / k = 1 := by
-    norm_num
-  have h5 : ∑ k in Icc 1 20, Real.logb (5^k) (3^(k^2)) = Real.logb 5 3 := by
-    rw [h2, h3, h4, one_mul]
-  have h6 : ∀ k ∈ Icc 1 100, Real.logb (9^k) (25^k) = k * Real.logb 9 25 := by
-    intros k hk
-    rw [Real.logb_pow, Real.logb_pow, mul_comm]
-  have h7 : ∑ k in Icc 1 100, Real.logb (9^k) (25^k) = ∑ k in Icc 1 100, k * Real.logb 9 25 := by
-    apply sum_congr rfl h6
-  have h8 : ∑ k in Icc 1 100, k = 5050 := by
-    norm_num
-  have h9 : ∑ k in Icc 1 100, Real.logb (9^k) (25^k) = 5050 * Real.logb 9 25 := by
-    rw [h7, h8, mul_comm]
-  have h10 : Real.logb 5 3 * (5050 * Real.logb 9 25) = 21000 := by
-    norm_num
-  rw [h5, h9, h10]
+theorem log_sum_product :
+  (∑ k in (Icc 1 20), real.logb (5^k) (3^(k^2))) * (∑ k in (Icc 1 100), real.logb (9^k) (25^k)) = 21000 :=
+begin
+  have h1 : ∑ k in Icc 1 20, real.logb (5^k) (3^(k^2)) = ∑ k in Icc 1 20, k * real.logb 5 3,
+  { apply sum_congr rfl,
+    intros k hk,
+    rw real.logb_pow,
+    rw real.logb_pow,
+    rw mul_comm,
+    rw mul_div_cancel_left,
+    exact ne_of_gt (real.logb_pos (by norm_num) (by norm_num)) },
+  
+  have h2 : ∑ k in Icc 1 100, real.logb (9^k) (25^k) = ∑ k in Icc 1 100, k * real.logb 9 25,
+  { apply sum_congr rfl,
+    intros k hk,
+    rw real.logb_pow,
+    rw real.logb_pow,
+    rw mul_comm,
+    rw mul_div_cancel_left,
+    exact ne_of_gt (real.logb_pos (by norm_num) (by norm_num)) },
+
+  rw [h1, h2],
+  rw [sum_mul, sum_mul],
+  have h3 : ∑ k in Icc 1 20, k = 20 * 21 / 2,
+  { rw sum_range_id,
+    norm_num },
+  have h4 : ∑ k in Icc 1 100, k = 100 * 101 / 2,
+  { rw sum_range_id,
+    norm_num },
+  
+  rw [h3, h4],
+  field_simp,
+  norm_num,
+  rw [mul_assoc, mul_assoc, mul_comm (real.logb 5 3), ←mul_assoc, ←mul_assoc],
+  have h5 : real.logb 5 3 * real.logb 9 25 = 1,
+  { rw [real.logb_div_logb, real.logb_div_logb],
+    norm_num },
+  rw h5,
+  norm_num,
+end

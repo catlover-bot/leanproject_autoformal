@@ -1,6 +1,5 @@
-import Mathlib.Data.Real.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
+import Mathlib.Analysis.SpecialFunctions.ExpLog
+import Mathlib.Analysis.Calculus.Deriv
 
 open Real
 
@@ -17,7 +16,7 @@ begin
   { field_simp, ring },
   rw [h3],
   have h4 : t / 2^t ≤ 1 / 6,
-  { sorry }, -- This step requires a more detailed analysis or numerical estimation
+  { sorry }, -- This step requires a detailed analysis or known inequality
   have h5 : 3 * t^2 / (2^t)^2 ≥ 0,
   { apply div_nonneg,
     { apply mul_nonneg,

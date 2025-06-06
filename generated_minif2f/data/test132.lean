@@ -1,30 +1,37 @@
-import Mathlib.Data.Rat.Basic
-import Mathlib.Data.Real.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+import data.rat.basic
+import data.real.basic
+import data.nat.prime
 
-open Nat
+open nat
 
-theorem irrational_function (f : ℚ → ℝ) 
-  (h_mul : ∀ x > 0, ∀ y > 0, f (x * y) = f x + f y) 
-  (h_prime : ∀ p, prime p → f p = p) : 
-  f (25 /. 11) < 0 := 
+theorem rational_function_property
+  (f : ℚ → ℝ)
+  (h_mul : ∀ x > 0, ∀ y > 0, f (x * y) = f x + f y)
+  (h_prime : ∀ p, prime p → f p = p) :
+  f (25 /. 11) < 0 :=
 begin
-  have h_pos : (25 : ℚ) > 0 := by norm_num,
-  have h_pos' : (11 : ℚ) > 0 := by norm_num,
-  have h_f_25_11 : f (25 /. 11) = f 25 - f 11,
-  { have h_mul' := h_mul 25 h_pos 11 h_pos',
-    rw [Rat.mul_num_denom, Rat.mul_denom_denom] at h_mul',
-    exact h_mul' },
-  have h_f_25 : f 25 = f (5 * 5),
-  { rw [←Rat.mul_num_denom, Rat.mul_denom_denom],
-    exact h_mul 5 (by norm_num) 5 (by norm_num) },
-  rw [h_f_25, h_mul 5 (by norm_num) 5 (by norm_num)] at h_f_25_11,
-  have h_f_5 : f 5 = 5,
-  { exact h_prime 5 (by norm_num) },
-  rw [h_f_5, h_f_5] at h_f_25_11,
-  have h_f_11 : f 11 = 11,
-  { exact h_prime 11 (by norm_num) },
-  rw [h_f_11] at h_f_25_11,
-  linarith,
+  -- Establish f(25) using the functional equation and prime condition
+  have f_5 : f 5 = 5,
+  { apply h_prime, exact prime_iff.2 ⟨2, dec_trivial⟩ },
+  
+  have f_25 : f 25 = f (5 * 5),
+  { rw h_mul 5 (by norm_num) 5 (by norm_num), },
+  rw [f_25, f_5, f_5],
+  have f_25_value : f 25 = 10,
+  { norm_num, },
+
+  -- Establish f(11) using the prime condition
+  have f_11 : f 11 = 11,
+  { apply h_prime, exact prime_iff.2 ⟨2, dec_trivial⟩ },
+
+  -- Calculate f(25 / 11) using the functional equation
+  have f_25_div_11 : f (25 /. 11) = f 25 - f 11,
+  { rw [h_mul 25 (by norm_num) (11⁻¹) (by norm_num)],
+    rw [h_mul 11 (by norm_num) (11⁻¹) (by norm_num)],
+    rw [f_11, mul_inv_cancel (by norm_num : (11 : ℚ) ≠ 0), f_11],
+    norm_num, },
+
+  -- Conclude f(25 / 11) < 0
+  rw [f_25_div_11, f_25_value, f_11],
+  norm_num,
 end

@@ -1,4 +1,3 @@
-import Mathlib.Algebra.GroupPower.Basic
+import Mathlib.Tactic.NormNum
 
-theorem ninety_one_squared : 91^2 = 8281 := by
-  norm_num
+theorem square_of_91 : 91^2 = 8281 := by norm_num

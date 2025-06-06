@@ -1,17 +1,20 @@
 import algebra.big_operators.basic
 import data.real.nnreal
+import analysis.mean_inequalities
 
 open_locale big_operators
+open finset
 
-theorem prod_le_one_of_sum_eq_n {a : ℕ → nnreal} {n : ℕ} (h : ∑ x in finset.range n, a x = n) :
-  ∏ x in finset.range n, a x ≤ 1 :=
+theorem am_gm_inequality (a : ℕ → nnreal) (n : ℕ) (h : ∑ x in range n, a x = n) : 
+  ∏ x in range n, a x ≤ 1 :=
 begin
-  induction n with n ih,
-  { simp },
-  { rw [finset.sum_range_succ, finset.prod_range_succ] at h ⊢,
-    have : a n ≤ 1,
-    { rw ← nnreal.coe_le_coe,
-      norm_cast,
-      linarith },
-    exact mul_le_one this (ih h) (zero_le _) }
+  cases n,
+  { simp, },
+  have h_am_gm := real.geom_mean_le_arith_mean_weighted (λ i, a i) (λ i, (1 : nnreal)) (range n.succ) _,
+  { simp only [sum_const, nsmul_eq_mul, one_mul, card_range, cast_succ] at h_am_gm,
+    rw [h, nsmul_eq_mul, one_mul] at h_am_gm,
+    exact h_am_gm, },
+  { intros i hi,
+    exact zero_le (a i), },
+  { simp, },
 end

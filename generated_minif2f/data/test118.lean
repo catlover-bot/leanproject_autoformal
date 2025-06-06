@@ -1,6 +1,4 @@
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Gcd
+import Mathlib.Data.Nat.GCD.Basic
 
 theorem mathd_numbertheory_435
   (k : ℕ)
@@ -9,24 +7,26 @@ theorem mathd_numbertheory_435
   (h₂ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 2) = 1)
   (h₃ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 1) = 1) :
   5 ≤ k :=
-by
-  by_contra hk
-  push_neg at hk
-  have h₄ : k ≤ 4 := Nat.le_of_lt_succ hk
-  interval_cases k with hk
-  case h_1 =>
-    specialize h₁ 0
-    simp at h₁
-    contradiction
-  case h_2 =>
-    specialize h₂ 0
-    simp at h₂
-    contradiction
-  case h_3 =>
-    specialize h₃ 0
-    simp at h₃
-    contradiction
-  case h_4 =>
-    specialize h₁ 0
-    simp at h₁
-    contradiction
+begin
+  by_contra h,
+  have hk : k < 5 := Nat.lt_of_not_ge h,
+  interval_cases k with hk,
+  { -- k = 1
+    specialize h₁ 0,
+    specialize h₂ 0,
+    specialize h₃ 0,
+    norm_num at h₁ h₂ h₃,
+    contradiction },
+  { -- k = 2
+    specialize h₂ 0,
+    norm_num at h₂,
+    contradiction },
+  { -- k = 3
+    specialize h₁ 0,
+    norm_num at h₁,
+    contradiction },
+  { -- k = 4
+    specialize h₂ 0,
+    norm_num at h₂,
+    contradiction },
+end
