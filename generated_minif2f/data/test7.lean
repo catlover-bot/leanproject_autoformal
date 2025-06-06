@@ -1,62 +1,94 @@
-import Mathlib.Data.Real.Basic
-import Mathlib.Data.Finset
-import Mathlib.Analysis.SpecialFunctions.Trigonometric
+import data.real.basic
+import data.finset
+import analysis.special_functions.trigonometric
 
-open Real
-open Finset
+open real
+open finset
 
 theorem imo_1969_p2
-  (m n : ℝ)
-  (k : ℕ)
-  (a : ℕ → ℝ)
-  (y : ℝ → ℝ)
-  (h₀ : 0 < k)
-  (h₁ : ∀ x, y x = ∑ i in range k, (cos (a i + x) / (2^i)))
-  (h₂ : y m = 0)
-  (h₃ : y n = 0) :
-  ∃ t : ℤ, m - n = t * π :=
+(m n : ℝ)
+(k : ℕ)
+(a : ℕ → ℝ)
+(y : ℝ → ℝ)
+(h₀ : 0 < k)
+(h₁ : ∀ x, y x = ∑ i in finset.range k, ((cos (a i + x)) / (2^i)))
+(h₂ : y m = 0)
+(h₃ : y n = 0) :
+∃ t : ℤ, m - n = t * π :=
 begin
-  have h₄ : ∀ x, y x = ∑ i in range k, (cos (a i) * cos x - sin (a i) * sin x) / (2^i),
+  have h₄ : ∀ x, y (x + 2 * π) = y x,
   { intro x,
     rw h₁,
-    congr,
-    ext i,
-    rw cos_add },
-  have h₅ : ∀ x, y x = (∑ i in range k, cos (a i) / (2^i)) * cos x - (∑ i in range k, sin (a i) / (2^i)) * sin x,
-  { intro x,
-    rw h₄,
-    simp only [sum_mul],
-    congr,
-    { ext i,
-      rw mul_div_assoc },
-    { ext i,
-      rw mul_div_assoc } },
-  have h₆ : ∀ x, y x = A * cos x - B * sin x,
-  { intro x,
-    rw h₅,
-    set A := ∑ i in range k, cos (a i) / (2^i) with hA,
-    set B := ∑ i in range k, sin (a i) / (2^i) with hB,
-    rw [hA, hB] },
-  have h₇ : A * cos m - B * sin m = 0,
-  { rw [←h₆ m, h₂] },
-  have h₈ : A * cos n - B * sin n = 0,
-  { rw [←h₆ n, h₃] },
-  have h₉ : A ≠ 0 ∨ B ≠ 0,
-  { intro h,
-    rw [not_or_distrib] at h,
-    cases h with hA hB,
-    rw [hA, hB] at h₇,
-    simp only [zero_mul, sub_zero] at h₇,
-    exact zero_ne_one h₇ },
-  have h₁₀ : cos m * sin n = cos n * sin m,
-  { apply (sub_eq_zero.mp _).symm,
-    rw [←sub_eq_zero, ←sub_mul, ←sub_mul, h₇, h₈],
+    rw h₁ (x + 2 * π),
+    apply finset.sum_congr rfl,
+    intros i hi,
+    rw [cos_add, cos_two_pi, sin_two_pi, mul_zero, sub_zero, mul_one, add_zero],
     ring },
+  
+  have h₅ : y (m + π) = -y m,
+  { rw h₁,
+    rw h₁ (m + π),
+    apply finset.sum_congr rfl,
+    intros i hi,
+    rw [cos_add, cos_pi, sin_pi, mul_zero, sub_zero, mul_neg_one, add_zero],
+    ring },
+  
+  have h₆ : y (n + π) = -y n,
+  { rw h₁,
+    rw h₁ (n + π),
+    apply finset.sum_congr rfl,
+    intros i hi,
+    rw [cos_add, cos_pi, sin_pi, mul_zero, sub_zero, mul_neg_one, add_zero],
+    ring },
+  
+  have h₇ : y (m + π) = 0,
+  { rw h₂,
+    rw h₅,
+    simp },
+  
+  have h₈ : y (n + π) = 0,
+  { rw h₃,
+    rw h₆,
+    simp },
+  
+  have h₉ : y (m + 2 * π) = 0,
+  { rw h₄ m,
+    rw h₂ },
+  
+  have h₁₀ : y (n + 2 * π) = 0,
+  { rw h₄ n,
+    rw h₃ },
+  
+  have h₁₁ : ∀ t : ℤ, y (m + t * π) = 0,
+  { intro t,
+    induction t with t ht t ht,
+    { simp [h₂] },
+    { rw [int.of_nat_succ, int.cast_add, int.cast_one, add_assoc, add_comm π, add_assoc],
+      rw h₅,
+      rw ht,
+      simp },
+    { rw [int.neg_succ_of_nat_coe, int.cast_neg, int.cast_add, int.cast_one, add_assoc, add_comm π, add_assoc],
+      rw h₅,
+      rw ht,
+      simp } },
+  
+  have h₁₂ : ∀ t : ℤ, y (n + t * π) = 0,
+  { intro t,
+    induction t with t ht t ht,
+    { simp [h₃] },
+    { rw [int.of_nat_succ, int.cast_add, int.cast_one, add_assoc, add_comm π, add_assoc],
+      rw h₆,
+      rw ht,
+      simp },
+    { rw [int.neg_succ_of_nat_coe, int.cast_neg, int.cast_add, int.cast_one, add_assoc, add_comm π, add_assoc],
+      rw h₆,
+      rw ht,
+      simp } },
+  
   use (m - n) / π,
-  rw [eq_div_iff_mul_eq, sub_eq_iff_eq_add],
-  { apply eq_of_cos_eq_cos,
-    { rw [cos_add, cos_add, h₁₀],
-      ring },
-    { exact h₉ } },
-  { exact pi_ne_zero }
+  field_simp [pi_ne_zero],
+  rw [← sub_eq_zero, ← sub_mul, sub_eq_zero],
+  apply eq_of_sub_eq_zero,
+  rw [← h₁₁ ((m - n) / π), ← h₁₂ 0],
+  simp,
 end

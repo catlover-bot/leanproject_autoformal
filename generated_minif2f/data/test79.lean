@@ -1,34 +1,44 @@
-```lean
 import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Nat.GCD
+import Mathlib.Data.Nat.Gcd
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 
 open Nat
 
-theorem lcm_bound (a b : ℕ) :
+theorem lcm_ge_108 (a b : ℕ) :
   (0 < a ∧ 0 < b) ∧ (a % 10 = 2) ∧ (b % 10 = 4) ∧ (gcd a b = 6) → 108 ≤ lcm a b :=
 begin
-  rintro ⟨⟨ha, hb⟩, ha2, hb4, hgcd⟩,
-  have hdiva : 2 ∣ a := by { rw [←mod_eq_zero_iff_dvd, ←nat.mod_add_div a 10, ha2], norm_num },
-  have hdivb : 2 ∣ b := by { rw [←mod_eq_zero_iff_dvd, ←nat.mod_add_div b 10, hb4], norm_num },
-  have hdiv6a : 6 ∣ a := by { apply dvd_of_gcd_eq_left hgcd },
-  have hdiv6b : 6 ∣ b := by { apply dvd_of_gcd_eq_right hgcd },
-  have hdiv3a : 3 ∣ a := by { apply dvd_trans (gcd_dvd_left 6 a) hdiv6a },
-  have hdiv3b : 3 ∣ b := by { apply dvd_trans (gcd_dvd_right 6 b) hdiv6b },
-  have hcoprime : coprime (a / 6) (b / 6),
-  { rw [coprime_div_gcd_div_gcd hgcd hgcd, gcd_self], exact coprime_one_right _ },
-  have hlcm : lcm a b = a * b / gcd a b := lcm_eq_mul_div_gcd a b,
-  rw [hlcm, hgcd],
-  have hdiv36 : 36 ∣ a * b,
-  { apply dvd_mul_of_dvd_left hdiv6a b },
-  have hdiv36' : 36 ∣ a * b,
-  { apply dvd_mul_of_dvd_right hdiv6b a },
-  have hdiv36'' : 36 ∣ a * b := dvd_trans hdiv36 hdiv36',
-  have hdiv36''' : 36 ∣ a * b / 6,
-  { apply dvd_div_of_mul_dvd hdiv36'' },
-  have h36 : 36 ≤ a * b / 6,
-  { apply nat.le_of_dvd, norm_num, exact hdiv36''' },
+  rintro ⟨⟨ha, hb⟩, ha_mod, hb_mod, gcd_ab⟩,
+  have ha_form : ∃ m, a = 10 * m + 2,
+  { use (a / 10), rw [Nat.mod_add_div] },
+  have hb_form : ∃ n, b = 10 * n + 4,
+  { use (b / 10), rw [Nat.mod_add_div] },
+  rcases ha_form with ⟨m, rfl⟩,
+  rcases hb_form with ⟨n, rfl⟩,
+  have gcd_condition : gcd (10 * m + 2) (10 * n + 4) = 6,
+  { rw [gcd_ab] },
+  have a_mod_6 : (10 * m + 2) % 6 = 0,
+  { rw [Nat.add_mod, Nat.mul_mod, Nat.mod_self, zero_add, Nat.mod_eq_zero_of_dvd],
+    exact dvd_of_mod_eq_zero (by norm_num) },
+  have b_mod_6 : (10 * n + 4) % 6 = 0,
+  { rw [Nat.add_mod, Nat.mul_mod, Nat.mod_self, zero_add, Nat.mod_eq_zero_of_dvd],
+    exact dvd_of_mod_eq_zero (by norm_num) },
+  have a_div_6 : ∃ k, 10 * m + 2 = 6 * k,
+  { use (10 * m + 2) / 6, rw [Nat.mul_div_cancel' (dvd_of_mod_eq_zero a_mod_6)] },
+  have b_div_6 : ∃ l, 10 * n + 4 = 6 * l,
+  { use (10 * n + 4) / 6, rw [Nat.mul_div_cancel' (dvd_of_mod_eq_zero b_mod_6)] },
+  rcases a_div_6 with ⟨k, rfl⟩,
+  rcases b_div_6 with ⟨l, rfl⟩,
+  have lcm_formula : lcm (6 * k) (6 * l) = 6 * lcm k l,
+  { rw [lcm_mul_left, gcd_mul_left_left, gcd_ab, mul_comm] },
+  have lcm_kl_ge_18 : 18 ≤ lcm k l,
+  { have : 1 ≤ k ∧ 1 ≤ l,
+    { split; apply Nat.div_pos; linarith },
+    have : 3 ≤ k + l,
+    { linarith },
+    have : 18 ≤ k * l,
+    { nlinarith },
+    exact le_trans (lcm_le_mul k l) this },
+  rw [lcm_formula],
   linarith,
 end
-```

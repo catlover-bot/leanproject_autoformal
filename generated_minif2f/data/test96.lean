@@ -3,27 +3,17 @@ import Mathlib.Data.Nat.Prime
 
 open Nat
 
-theorem factorial_divisor_bound : ∀ (n : ℕ), 0 < n → 80325 ∣ n! → 17 ≤ n :=
+theorem factorial_divisible_by_80325 (n : ℕ) (h₀ : 0 < n) (h₁ : 80325 ∣ n!) : 17 ≤ n :=
 begin
-  intros n hn hdiv,
-  have h80325 : 80325 = 3^2 * 5^2 * 7 * 17,
-  { norm_num },
-  rw h80325 at hdiv,
-  have h3 : 3^2 ∣ n!,
-  { apply dvd_trans _ hdiv, apply dvd_mul_right },
-  have h5 : 5^2 ∣ n!,
-  { apply dvd_trans _ hdiv, apply dvd_mul_right },
-  have h7 : 7 ∣ n!,
-  { apply dvd_trans _ hdiv, apply dvd_mul_right },
-  have h17 : 17 ∣ n!,
-  { apply dvd_trans _ hdiv, apply dvd_mul_right },
-  have h3n : 3 ≤ n,
-  { apply Nat.prime.dvd_factorial (prime_of_nat_prime 3) hn, exact h3 },
-  have h5n : 5 ≤ n,
-  { apply Nat.prime.dvd_factorial (prime_of_nat_prime 5) hn, exact h5 },
-  have h7n : 7 ≤ n,
-  { apply Nat.prime.dvd_factorial (prime_of_nat_prime 7) hn, exact h7 },
-  have h17n : 17 ≤ n,
-  { apply Nat.prime.dvd_factorial (prime_of_nat_prime 17) hn, exact h17 },
-  exact h17n,
+  have h80325 : 80325 = 3^2 * 5^2 * 7 * 17 := by norm_num,
+  rw h80325 at h₁,
+  have h3 : 3^2 ∣ n! := dvd_trans (dvd_mul_right (3^2) _) h₁,
+  have h5 : 5^2 ∣ n! := dvd_trans (dvd_mul_right (5^2) _) h₁,
+  have h7 : 7 ∣ n! := dvd_trans (dvd_mul_right 7 _) h₁,
+  have h17 : 17 ∣ n! := dvd_trans (dvd_mul_right 17 _) h₁,
+  have : 6 ≤ n := le_of_dvd (factorial_pos n) h3,
+  have : 10 ≤ n := le_of_dvd (factorial_pos n) h5,
+  have : 7 ≤ n := le_of_dvd (factorial_pos n) h7,
+  have : 17 ≤ n := le_of_dvd (factorial_pos n) h17,
+  exact this,
 end

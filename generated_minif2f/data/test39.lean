@@ -1,18 +1,27 @@
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Finset
-import Mathlib.Algebra.BigOperators
+import data.nat.basic
+import data.finset
+import algebra.big_operators
 
-open Finset
+open finset
 
 theorem mathd_numbertheory_353
-  (s : ℕ)
-  (h₀ : s = ∑ k in Icc 2010 4018, k) :
-  s % 2009 = 0 :=
-by
-  have h₁ : ∑ k in Icc 2010 4018, k = (4018 * 4019) / 2 - (2009 * 2010) / 2 :=
-    by rw [sum_Icc_eq_sub_sum_Icc, sum_range_id, sum_range_id]
-  rw [h₀, h₁]
-  have h₂ : (4018 * 4019) / 2 - (2009 * 2010) / 2 = 2009 * 1005 :=
-    by norm_num
-  rw [h₂]
-  exact Nat.mod_mul_left_div_self 2009 1005
+(s : ℕ)
+(h₀ : s = ∑ k in finset.Icc 2010 4018, k) :
+s % 2009 = 0 :=
+begin
+  have h₁ : 4018 - 2010 + 1 = 2009 := rfl,
+  have h₂ : s = 2009 * (2010 + 4018) / 2,
+  { rw h₀,
+    rw sum_Icc_eq_sum_range,
+    rw range_eq_Ico,
+    rw sum_range_add,
+    rw sum_range_id,
+    rw h₁,
+    norm_num,
+    ring },
+  rw h₂,
+  have h₃ : 2009 * (2010 + 4018) / 2 % 2009 = 0,
+  { rw nat.mul_div_cancel_left,
+    exact nat.divisible_of_dvd (dvd_refl 2009) },
+  exact h₃,
+end

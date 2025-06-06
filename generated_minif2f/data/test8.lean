@@ -1,15 +1,16 @@
-import Mathlib.Data.Equiv.Basic
+import data.equiv.basic
 
 theorem mathd_algebra_209
-  (σ : Equiv ℝ ℝ)
-  (h₀ : σ.symm 2 = 10)
-  (h₁ : σ.symm 10 = 1)
-  (h₂ : σ.symm 1 = 2) :
-  σ (σ 10) = 1 :=
+(σ : equiv ℝ ℝ)
+(h₀ : σ.2 2 = 10)
+(h₁ : σ.2 10 = 1)
+(h₂ : σ.2 1 = 2) :
+σ.1 (σ.1 10) = 1 :=
 begin
-  have h₃ : σ 2 = 1,
-  { rw [←Equiv.symm_apply_eq, h₂] },
-  have h₄ : σ 10 = 2,
-  { rw [←Equiv.symm_apply_eq, h₀] },
-  rw [h₄, h₃],
+  -- From h₀: σ.2 2 = 10, we have σ.1 10 = 2
+  have h₃ : σ.1 10 = 2, from equiv.apply_eq_iff_eq_symm_apply.mpr h₀,
+  -- From h₂: σ.2 1 = 2, we have σ.1 2 = 1
+  have h₄ : σ.1 2 = 1, from equiv.apply_eq_iff_eq_symm_apply.mpr h₂,
+  -- Substitute these into σ.1 (σ.1 10)
+  rw [h₃, h₄],
 end

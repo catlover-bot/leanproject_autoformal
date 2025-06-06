@@ -1,8 +1,14 @@
-import Mathlib.Data.Finset
-import Mathlib.Algebra.BigOperators
-import Mathlib.Tactic.NormNum
+import data.finset
+import data.nat.parity
+import algebra.big_operators
 
-open BigOperators
+open finset
+open_locale big_operators
 
-lemma prod_odd_mod_10 : (∏ k in finset.range 6, (2 * k + 1)) % 10 = 5 := by
-  norm_num [finset.range, List.prod]
+theorem product_of_first_six_odds_mod_10 : (∏ k in range 6, (2 * k + 1)) % 10 = 5 :=
+begin
+  have h : ∏ k in range 6, (2 * k + 1) = 1 * 3 * 5 * 7 * 9 * 11,
+  { simp },
+  rw h,
+  norm_num,
+end

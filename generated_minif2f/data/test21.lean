@@ -1,32 +1,49 @@
-import Mathlib.Data.Nat.Prime
-import Mathlib.Data.Finset
-import Mathlib.Algebra.BigOperators
+import data.nat.basic
+import data.nat.prime
+import data.finset
+import data.nat.divisors
 
-open Nat
-open Finset
+open nat
+open finset
 
 theorem sum_of_prime_divisors_of_500 :
   ∀ (a : ℕ), a = (∑ k in (nat.divisors 500), k) → ∑ k in finset.filter (λ x, nat.prime x) (nat.divisors a), k = 25 :=
 begin
-  intro a,
-  intro h,
-  have h1 : nat.divisors 500 = {1, 2, 4, 5, 10, 20, 25, 50, 100, 125, 250, 500},
-  { rw nat.divisors_eq_filter,
-    simp [nat.mem_divisors, nat.dvd_iff_mod_eq_zero],
-    norm_num },
-  have h2 : ∑ k in {1, 2, 4, 5, 10, 20, 25, 50, 100, 125, 250, 500}, k = 1172,
-  { norm_num },
-  rw h1 at h,
-  rw h2 at h,
-  have h3 : a = 1172 := h,
-  rw h3,
-  have h4 : finset.filter (λ x, nat.prime x) (nat.divisors 1172) = {2, 5},
-  { rw nat.divisors_eq_filter,
-    simp [nat.mem_divisors, nat.dvd_iff_mod_eq_zero],
-    norm_num,
+  intros a h₀,
+  have h₁ : nat.divisors 500 = {1, 2, 4, 5, 10, 20, 25, 50, 100, 125, 250, 500},
+  { rw nat.divisors_eq_filter_dvd,
     ext,
-    simp [nat.prime_def_lt, nat.dvd_iff_mod_eq_zero],
+    simp [nat.mem_divisors, nat.dvd_iff_mod_eq_zero],
+    split,
+    { intro h,
+      cases h with h₁ h₂,
+      exact h₁ },
+    { intro h,
+      exact ⟨h, nat.pos_of_ne_zero (ne_of_gt (nat.lt_of_le_of_lt (nat.zero_le x) (nat.lt_succ_self 500)))⟩ } },
+  have h₂ : a = 1092,
+  { rw h₀,
+    rw h₁,
     norm_num },
-  rw h4,
+  have h₃ : nat.divisors 1092 = {1, 2, 3, 4, 6, 7, 12, 13, 21, 28, 36, 42, 84, 1092},
+  { rw nat.divisors_eq_filter_dvd,
+    ext,
+    simp [nat.mem_divisors, nat.dvd_iff_mod_eq_zero],
+    split,
+    { intro h,
+      cases h with h₁ h₂,
+      exact h₁ },
+    { intro h,
+      exact ⟨h, nat.pos_of_ne_zero (ne_of_gt (nat.lt_of_le_of_lt (nat.zero_le x) (nat.lt_succ_self 1092)))⟩ } },
+  have h₄ : finset.filter (λ x, nat.prime x) (nat.divisors 1092) = {2, 3, 7, 13},
+  { rw h₃,
+    ext,
+    simp [nat.prime],
+    split,
+    { intro h,
+      fin_cases x; norm_num at h },
+    { intro h,
+      fin_cases x; norm_num } },
+  rw h₂,
+  rw h₄,
   norm_num,
 end

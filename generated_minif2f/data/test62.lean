@@ -1,4 +1,7 @@
 import Mathlib.Data.Real.Basic
+import Mathlib.Algebra.GroupPower.Basic
+
+open Real
 
 theorem mathd_algebra_487
   (a b c d : ℝ)
@@ -6,23 +9,33 @@ theorem mathd_algebra_487
   (h₁ : a + b = 1)
   (h₂ : d = c^2)
   (h₃ : c + d = 1) :
-  real.sqrt ((a - c)^2 + (b - d)^2) = real.sqrt 10 :=
+  sqrt ((a - c)^2 + (b - d)^2) = sqrt 10 :=
 by
-  have h₄ : b = 1 - a := by linarith
-  have h₅ : d = 1 - c := by linarith
-  rw [h₀, h₂, h₄, h₅]
-  have h₆ : a^2 = 1 - a := by linarith
-  have h₇ : c^2 = 1 - c := by linarith
-  have h₈ : (a - c)^2 = a^2 - 2 * a * c + c^2 := by ring
-  rw [h₆, h₇] at h₈
-  have h₉ : a^2 + c^2 = 2 := by linarith
-  have h₁₀ : -2 * a * c = -2 := by linarith
-  rw [h₉, h₁₀] at h₈
-  have h₁₁ : (a - c)^2 = 4 := by linarith
-  have h₁₂ : (b - d)^2 = (1 - a - (1 - c))^2 := by ring
-  rw [h₄, h₅] at h₁₂
-  have h₁₃ : (b - d)^2 = (c - a)^2 := by ring
-  rw [h₁₃, h₁₁]
-  have h₁₄ : (a - c)^2 + (c - a)^2 = 8 := by linarith
-  rw [h₁₄]
-  norm_num
+  have ha : a^2 + a - 1 = 0 := by rw [←h₀, ←h₁]; ring
+  have hc : c^2 + c - 1 = 0 := by rw [←h₂, ←h₃]; ring
+  have a_values : a = 1 ∨ a = -1 :=
+    by simpa using eq_or_eq_neg_of_add_eq_zero (eq_neg_of_add_eq_zero ha)
+  have c_values : c = 1 ∨ c = -1 :=
+    by simpa using eq_or_eq_neg_of_add_eq_zero (eq_neg_of_add_eq_zero hc)
+  cases a_values with ha1 ha1
+  · cases c_values with hc1 hc1
+    · rw [ha1, hc1, h₀, h₂]
+      simp
+    · rw [ha1, hc1, h₀, h₂]
+      simp
+  · cases c_values with hc1 hc1
+    · rw [ha1, hc1, h₀, h₂]
+      simp
+    · rw [ha1, hc1, h₀, h₂]
+      simp
+  all_goals
+    rw [h₀, h₂]
+    simp
+    ring_nf
+    norm_num
+    rw [sqrt_sq]
+    norm_num
+    linarith
+    linarith
+    linarith
+    linarith

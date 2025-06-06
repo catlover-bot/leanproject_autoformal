@@ -1,7 +1,5 @@
 import Mathlib.Algebra.Group.Defs
-import Mathlib.Algebra.Ring.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+import Mathlib.Tactic.NormNum
 
 theorem mathd_algebra_478
 (b h v : ℝ)
@@ -12,6 +10,5 @@ theorem mathd_algebra_478
 v = 65 :=
 by
   rw [h₂, h₃] at h₁
-  have : v = 1 / 3 * (30 * (13 / 2)) := h₁
-  norm_num at this
-  exact this
+  rw [h₁]
+  norm_num

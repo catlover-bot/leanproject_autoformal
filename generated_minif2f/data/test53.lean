@@ -1,23 +1,30 @@
 import Mathlib.Data.Int.Basic
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+import Mathlib.Tactic.NormNum
 
-namespace MyNamespace
-
-theorem problem_statement : ∀ (x : ℤ), x < 0 → (24 * x) % 1199 = 15 → x ≤ -449 :=
-begin
-  intros x hx hmod,
-  have h1 : 24 * x = 1199 * k + 15, from Int.mod_eq_of_lt (24 * x) 1199 hmod,
-  have h2 : 24 * x < 0, from mul_neg_of_pos_of_neg (by norm_num) hx,
-  have h3 : 1199 * k + 15 < 0, from h1 ▸ h2,
-  have h4 : 1199 * k < -15, from sub_lt_iff_lt_add'.mpr h3,
-  have h5 : k < -15 / 1199, from (div_lt_iff (by norm_num : (0 : ℤ) < 1199)).mpr h4,
-  have h6 : k ≤ -1, from Int.le_of_lt (by linarith),
-  have h7 : 24 * x ≤ 24 * -449, from calc
-    24 * x = 1199 * k + 15 : h1
-    ... ≤ 1199 * -1 + 15 : add_le_add_right (mul_le_mul_of_nonpos_left h6 (by norm_num)) 15
-    ... = 24 * -449 : by norm_num,
-  exact (mul_le_mul_left (by norm_num : (0 : ℤ) < 24)).mp h7,
-end
-
-end MyNamespace
+theorem negative_integer_bound (x : ℤ) (h₀ : x < 0) (h₁ : (24 * x) % 1199 = 15) : x ≤ -449 := 
+  by
+  have h₂ : 24 * x ≡ 15 [ZMOD 1199] := Int.modeq_iff_dvd.2 (by rw [Int.sub_eq_add_neg, Int.add_comm, ←Int.mod_def, h₁]; exact dvd_refl _)
+  obtain ⟨k, hk⟩ := h₂
+  have : x = (1199 * k + 15) / 24 := by
+    rw [hk, Int.add_comm, Int.mul_comm]
+    exact Int.div_eq_of_eq_mul_right (by norm_num) rfl
+  have h₃ : 24 * x < 0 := by linarith
+  have h₄ : 1199 * k + 15 < 0 := by
+    rw [←Int.mul_div_cancel' (by norm_num : 24 ≠ 0) this]
+    exact h₃
+  have h₅ : 1199 * k < -15 := by linarith
+  have h₆ : k < -15 / 1199 := by
+    apply Int.div_lt_of_lt_mul
+    norm_num
+    exact h₅
+  have h₇ : k ≤ -1 := by linarith
+  have h₈ : x ≤ -449 := by
+    calc
+      x = (1199 * k + 15) / 24 := this
+      _ ≤ (1199 * -1 + 15) / 24 := by
+        apply Int.div_le_div_of_le_of_pos
+        linarith
+        norm_num
+      _ = -449 := by norm_num
+  exact h₈
