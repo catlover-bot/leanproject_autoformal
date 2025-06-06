@@ -1,32 +1,46 @@
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Int.Basic
-import Mathlib.Data.Finset
-import Mathlib.Algebra.BigOperators.Ring
+import data.nat.parity
+import data.finset
+import algebra.big_operators.basic
 
-open Finset
+open finset
 
-lemma sum_range_odd (n : ℕ) : ∑ k in range n, (2 * k + 1 : ℤ) = n * n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [sum_range_succ, ih]
-    simp [mul_add, add_mul, add_assoc, add_comm, add_left_comm]
+lemma sum_first_odd_numbers : ∑ k in range 8, (2 * k + 1) = 64 :=
+begin
+  -- Calculate the sum of the first 8 odd numbers: 1, 3, 5, ..., 15
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  norm_num,
+end
 
-lemma sum_range_even (a n : ℕ) : ∑ k in range n, (a + 2 * k : ℤ) = n * a + n * (n - 1) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [sum_range_succ, ih]
-    simp [mul_add, add_mul, add_assoc, add_comm, add_left_comm, Nat.succ_eq_add_one]
-    ring
+lemma sum_sequence (a : ℕ) : ∑ k in range 5, (a + 2 * k) = 5 * a + 20 :=
+begin
+  -- Calculate the sum of the sequence a, a+2, a+4, a+6, a+8
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  rw sum_range_succ,
+  norm_num,
+  ring,
+end
 
-theorem main_theorem : ∀ (a : ℕ), even a → (↑∑ k in range 8, (2 * k + 1) - ↑∑ k in range 5, (a + 2 * k) = (4:ℤ)) → a = 8 := by
-  intros a ha h
-  have h1 : ∑ k in range 8, (2 * k + 1 : ℤ) = 64 := by
-    rw [sum_range_odd]
-    norm_num
-  have h2 : ∑ k in range 5, (a + 2 * k : ℤ) = 5 * a + 10 := by
-    rw [sum_range_even]
-    norm_num
-  rw [h1, h2] at h
-  linarith
+theorem even_a_implies_a_eq_8 (a : ℕ) (h_even : even a)
+  (h_eq : (↑∑ k in range 8, (2 * k + 1) - ↑∑ k in range 5, (a + 2 * k) = (4:ℤ))) : a = 8 :=
+begin
+  -- Use the precomputed sums
+  have h1 : ∑ k in range 8, (2 * k + 1) = 64 := sum_first_odd_numbers,
+  have h2 : ∑ k in range 5, (a + 2 * k) = 5 * a + 20 := sum_sequence a,
+  
+  -- Substitute these into the hypothesis
+  rw [h1, h2] at h_eq,
+  
+  -- Simplify the equation
+  norm_cast at h_eq,
+  linarith,
+end

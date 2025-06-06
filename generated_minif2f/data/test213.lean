@@ -1,22 +1,29 @@
 import Mathlib.Data.Int.Basic
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.NormNum
 
 open Int
 
-theorem odd_square_mod_eight (a : ℤ) (b : ℕ) (ha : odd a) (hb : 4 ∣ b) : (a^2 + b^2) % 8 = 1 := by
+theorem odd_square_mod_eight (a : ℤ) (b : ℕ) (ha : Odd a) (hb : 4 ∣ b) : (a^2 + b^2) % 8 = 1 := 
+  by
+  -- Express a as an odd integer
   obtain ⟨k, hk⟩ := ha
-  obtain ⟨c, hc⟩ := hb
-  have ha_mod : a % 2 = 1 := by
-    rw [hk, add_comm, Int.add_mul_mod_self_left]
-    norm_num
-  have ha_sq_mod : a^2 % 8 = 1 := by
-    rw [hk, add_comm, Int.add_mul_mod_self_left]
-    norm_num
-  have hb_sq_mod : b^2 % 8 = 0 := by
-    rw [hc, Nat.cast_mul, Int.mul_pow, Int.pow_two, Int.mul_assoc, Int.mul_comm 4, Int.mul_assoc]
-    norm_num
+  have ha2 : a^2 % 8 = 1 := by
+    rw [hk]
+    calc
+      (2 * k + 1)^2 = 4 * k^2 + 4 * k + 1 := by ring
+      _ % 8 = 1 := by norm_num
+
+  -- Express b as a multiple of 4
+  obtain ⟨m, hm⟩ := hb
+  have hb2 : b^2 % 8 = 0 := by
+    rw [hm]
+    calc
+      (4 * m)^2 = 16 * m^2 := by ring
+      _ % 8 = 0 := by norm_num
+
+  -- Combine results
   calc
-    (a^2 + b^2) % 8 = (a^2 % 8 + b^2 % 8) % 8 := Int.add_mod _ _ _
-    _ = (1 + 0) % 8 := by rw [ha_sq_mod, hb_sq_mod]
+    (a^2 + b^2) % 8 = (a^2 % 8 + b^2 % 8) % 8 := by exact_mod_cast Int.add_mod _ _ _
+    _ = (1 + 0) % 8 := by rw [ha2, hb2]
     _ = 1 := by norm_num

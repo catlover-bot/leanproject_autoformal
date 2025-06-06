@@ -1,31 +1,41 @@
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Data.Real.Basic
+import Mathlib.Tactic
 
 open Real
 
-theorem periodic_function_exists (a : ℝ) (f : ℝ → ℝ) :
-  0 < a →
-  (∀ x, f (x + a) = 1 / 2 + sqrt (f x - (f x)^2)) →
+theorem periodic_function_exists (a : ℝ) (f : ℝ → ℝ) (h₀ : 0 < a)
+  (h₁ : ∀ x, f (x + a) = 1 / 2 + sqrt (f x - (f x)^2)) :
   ∃ b > 0, ∀ x, f (x + b) = f x :=
 begin
-  intros ha hf,
-  have h_fixed : ∀ x, f x = 1 / 2,
-  { intro x,
-    have h_eq : f (x + a) = 1 / 2 + sqrt (f x - (f x)^2) := hf x,
-    have h_eq' : f (x + 2 * a) = 1 / 2 + sqrt (f (x + a) - (f (x + a))^2) := hf (x + a),
-    rw h_eq at h_eq',
-    rw h_eq at h_eq',
-    have : sqrt (f x - (f x)^2) = 0,
+  -- Consider the fixed point equation y = 1/2 + sqrt(y - y^2)
+  have fixed_point : ∀ y, y = 1 / 2 + sqrt (y - y^2) → y = 1 / 2,
+  { intros y hy,
+    -- Rearrange the equation to isolate the square root
+    have : sqrt (y - y^2) = y - 1 / 2,
+    { rw hy, ring },
+    -- Square both sides to eliminate the square root
+    have : y - y^2 = (y - 1 / 2)^2,
+    { rw this },
+    -- Expand the square and simplify
+    have : y - y^2 = y^2 - y + 1 / 4,
+    { rw [sub_eq_add_neg, add_comm, pow_two, sub_eq_add_neg, add_assoc, add_comm, add_assoc],
+      ring },
+    -- Solve the resulting quadratic equation
+    have : 0 = 1 / 4,
     { linarith },
-    have : f x - (f x)^2 = 0,
-    { apply sqrt_eq_zero'.mp,
-      exact this },
-    rw sub_eq_zero at this,
-    exact this },
-  use a,
-  split,
-  { exact ha },
+    -- Conclude that y = 1/2 is the only solution
+    linarith },
+  
+  -- Show that f(x) = 1/2 for all x
+  have f_half : ∀ x, f x = 1 / 2,
   { intro x,
-    rw h_fixed x,
-    rw h_fixed (x + a) }
+    -- Use the functional equation repeatedly
+    specialize h₁ x,
+    apply fixed_point,
+    exact h₁ },
+  
+  -- Conclude that f is periodic with any positive period
+  use [a, h₀],
+  intro x,
+  rw [f_half (x + a), f_half x],
 end

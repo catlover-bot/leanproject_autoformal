@@ -1,26 +1,22 @@
-import Mathlib.Data.Nat.Basic
+```lean
+import Mathlib.Data.Nat.Prime
 
-theorem problem_solution : ∀ (m n : ℕ), 1 < m → 1 < n → m * n = 2005 → m + n = 406 := by
-  intros m n hm hn hmn
-  have h1 : m ≤ 2005 := Nat.le_of_dvd (Nat.succ_pos 2004) (dvd_of_mul_eq hmn)
-  have h2 : n ≤ 2005 := Nat.le_of_dvd (Nat.succ_pos 2004) (dvd_of_mul_eq (by rw [Nat.mul_comm, hmn]))
-  have h3 : m ≤ 2005 / 2 := Nat.le_div_of_mul_le (Nat.succ_pos 1) (by rw [hmn]; exact Nat.le_refl 2005)
-  have h4 : n ≤ 2005 / 2 := Nat.le_div_of_mul_le (Nat.succ_pos 1) (by rw [Nat.mul_comm, hmn]; exact Nat.le_refl 2005)
-  have h5 : m = 5 ∨ m = 401 := by
-    have : m * n = 2005 := hmn
-    have : m * n = 5 * 401 := by norm_num
-    have : m = 5 ∨ m = 401 := Nat.eq_of_mul_eq_mul_left (Nat.succ_pos 1) this
-    exact this
-  cases h5 with
-  | inl h5m =>
-    have h5n : n = 401 := by
-      rw [h5m] at hmn
-      exact Nat.eq_of_mul_eq_mul_left (Nat.succ_pos 1) (by norm_num at hmn; exact hmn)
-    rw [h5m, h5n]
-    norm_num
-  | inr h5m =>
-    have h5n : n = 5 := by
-      rw [h5m] at hmn
-      exact Nat.eq_of_mul_eq_mul_left (Nat.succ_pos 1) (by norm_num at hmn; exact hmn)
-    rw [h5m, h5n]
-    norm_num
+theorem product_sum_2005 (m n : ℕ) (hm : 1 < m) (hn : 1 < n) (h : m * n = 2005) : m + n = 406 := by
+  have h2005 : 2005 = 5 * 401 := by norm_num
+  have h5 : Nat.Prime 5 := by norm_num
+  have h401 : Nat.Prime 401 := by norm_num
+  have hmn : m = 5 ∧ n = 401 ∨ m = 401 ∧ n = 5 := by
+    apply Nat.Prime.eq_mul_of_mul_eq_prime_mul h5 h401 h
+    rw [h2005]
+  cases hmn with
+  | inl hmn1 =>
+    cases hmn1 with
+    | intro hm5 hn401 =>
+      rw [hm5, hn401]
+      norm_num
+  | inr hmn2 =>
+    cases hmn2 with
+    | intro hm401 hn5 =>
+      rw [hm401, hn5]
+      norm_num
+```

@@ -1,39 +1,38 @@
-import Mathlib.Data.Real.Basic
-import Mathlib.Data.Real.Sqrt
-import Mathlib.Algebra.GroupPower.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+import data.real.basic
+import data.real.nnreal
 
-open Real
+open real
 
-theorem problem_statement (x y : ℝ) (n : nnreal) :
-  (x < 0 ∧ y < 0) →
-  (abs x = 6) →
-  (sqrt ((x - 8)^2 + (y - 3)^2) = 15) →
-  (sqrt (x^2 + y^2) = sqrt n) →
+theorem distance_problem 
+  (x y : ℝ) (n : nnreal) 
+  (h1 : x < 0 ∧ y < 0) 
+  (h2 : abs x = 6) 
+  (h3 : sqrt ((x - 8)^2 + (y - 3)^2) = 15) 
+  (h4 : sqrt (x^2 + y^2) = sqrt n) : 
   n = 52 :=
 begin
-  intros hxy hx_abs hdist hnorm,
-  have hx : x = -6,
-  { rw abs_eq_neg_self at hx_abs,
-    exact hx_abs },
-  rw hx at hdist,
-  have h1 : sqrt ((-6 - 8)^2 + (y - 3)^2) = 15 := hdist,
-  norm_num at h1,
-  have h2 : sqrt (256 + (y - 3)^2) = 15 := h1,
-  rw sqrt_eq_iff_sq_eq at h2,
-  norm_num at h2,
-  have hy : (y - 3)^2 = 169,
-  { linarith },
-  have hy' : y - 3 = -13,
-  { rw pow_two at hy,
-    linarith },
-  have hy_val : y = -10,
-  { linarith },
-  rw [hx, hy_val] at hnorm,
-  have h3 : sqrt ((-6)^2 + (-10)^2) = sqrt n := hnorm,
-  norm_num at h3,
-  rw sqrt_eq_iff_sq_eq at h3,
-  norm_num at h3,
-  exact_mod_cast h3,
+  -- From abs x = 6 and x < 0, deduce x = -6
+  have hx : x = -6, from (abs_eq_iff.mpr ⟨le_of_lt h1.1, h2⟩).resolve_left (ne_of_lt h1.1),
+  
+  -- Substitute x = -6 into the distance equation
+  rw hx at h3,
+  have h_dist : sqrt ((-6 - 8)^2 + (y - 3)^2) = 15, from h3,
+  norm_num at h_dist,
+  have h_eq : 225 = 196 + (y - 3)^2, from (eq_of_sqrt_eq_sqrt h_dist).symm,
+  linarith [h_eq],
+  
+  -- Solve for y
+  have hy : (y - 3)^2 = 29, by linarith,
+  have hy_neg : y = 3 - sqrt 29, from (eq_of_sqrt_eq_sqrt (by rw [hy, sqrt_sq (sub_nonneg_of_le (le_of_lt h1.2))])).resolve_left (ne_of_lt h1.2),
+  
+  -- Calculate n
+  rw [hx, hy_neg] at h4,
+  have h_n : sqrt ((-6)^2 + (3 - sqrt 29)^2) = sqrt n, from h4,
+  norm_num at h_n,
+  have h_n_eq : sqrt (36 + (3 - sqrt 29)^2) = sqrt n, from h_n,
+  have h_y_sq : (3 - sqrt 29)^2 = 9 - 6 * sqrt 29 + 29, by ring,
+  rw h_y_sq at h_n_eq,
+  norm_num at h_n_eq,
+  have h_n_val : sqrt 52 = sqrt n, from h_n_eq,
+  exact nnreal.eq (eq_of_sqrt_eq_sqrt h_n_val),
 end

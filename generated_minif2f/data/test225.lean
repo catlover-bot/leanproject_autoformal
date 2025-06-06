@@ -1,8 +1,7 @@
-import Mathlib.Algebra.Field.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+import Mathlib.Data.Real.Basic
+import Mathlib.Tactic
 
-namespace AIME1990P4
+open Real
 
 theorem aime_1990_p4
 (x : ℝ)
@@ -13,19 +12,27 @@ theorem aime_1990_p4
 (h₄ : 1 / (x^2 - 10 * x - 29) + 1 / (x^2 - 10 * x - 45) - 2 / (x^2 - 10 * x - 69) = 0) :
 x = 13 :=
 begin
-  field_simp at h₄,
-  have h₅ : (x^2 - 10 * x - 69) * ((x^2 - 10 * x - 29) + (x^2 - 10 * x - 45)) = 2 * (x^2 - 10 * x - 29) * (x^2 - 10 * x - 45),
-  { linarith },
-  ring_nf at h₅,
-  have h₆ : x^2 - 10 * x - 29 + x^2 - 10 * x - 45 = 2 * x^2 - 20 * x - 74,
-  { ring },
-  rw h₆ at h₅,
-  have h₇ : (x^2 - 10 * x - 69) * (2 * x^2 - 20 * x - 74) = 2 * (x^2 - 10 * x - 29) * (x^2 - 10 * x - 45),
-  { exact h₅ },
-  ring_nf at h₇,
-  have h₈ : 2 * x^4 - 40 * x^3 - 148 * x^2 + 1480 * x + 5106 = 2 * x^4 - 40 * x^3 - 148 * x^2 + 1480 * x + 5106,
-  { exact h₇ },
-  linarith,
-end
+  have h₅ : (x^2 - 10 * x - 29) * (x^2 - 10 * x - 45) * (x^2 - 10 * x - 69) ≠ 0,
+  { apply mul_ne_zero,
+    { apply mul_ne_zero; assumption },
+    { assumption } },
+  
+  have h₆ : (x^2 - 10 * x - 45) * (x^2 - 10 * x - 69) + (x^2 - 10 * x - 29) * (x^2 - 10 * x - 69) 
+            - 2 * (x^2 - 10 * x - 29) * (x^2 - 10 * x - 45) = 0,
+  { field_simp [h₁, h₂, h₃] at h₄,
+    exact h₄ },
 
-end AIME1990P4
+  ring_nf at h₆,
+  have h₇ : x^2 - 10 * x - 13 = 0,
+  { linarith },
+
+  have h₈ : x = 13 ∨ x = -3,
+  { rw [← sub_eq_zero, ← sub_eq_zero] at h₇,
+    apply eq_or_eq_of_sub_eq_zero,
+    exact h₇ },
+
+  cases h₈,
+  { exact h₈ },
+  { exfalso,
+    linarith }
+end

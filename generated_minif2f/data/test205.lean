@@ -1,29 +1,40 @@
 import data.finset
-import data.int.basic
 import data.real.basic
+import data.int.basic
 
 open finset
-open real
 
-theorem finset_card_example : ∀ (S : finset ℤ), (∀ (x : ℤ), x ∈ S ↔ ↑(abs x) < 3 * real.pi) → S.card = 19 :=
+theorem card_of_set (S : finset ℤ) (h : ∀ (x : ℤ), x ∈ S ↔ ↑(abs x) < 3 * real.pi) : S.card = 19 :=
 begin
-  intros S h,
-  have h_bound : ∀ x : ℤ, x ∈ S ↔ abs x < 9, 
+  -- Calculate the approximate value of 3 * π
+  have hpi : 3 * real.pi ≈ 9.42477 := by norm_num,
+  
+  -- Determine the range of integers x such that |x| < 3 * π
+  have h_range : ∀ x : ℤ, ↑(abs x) < 3 * real.pi ↔ -9 < x ∧ x < 10,
   { intro x,
-    specialize h x,
-    rw [int.cast_lt, int.cast_coe_nat] at h,
-    exact h },
-  have h_range : ∀ x : ℤ, abs x < 9 ↔ x ∈ Icc (-8 : ℤ) 8,
-  { intro x,
-    rw [abs_lt, neg_lt, int.lt_iff_add_one_le, int.lt_iff_add_one_le],
+    rw [abs_lt, int.cast_lt, int.cast_lt],
     split,
     { intro h,
       split; linarith },
     { rintro ⟨h₁, h₂⟩,
       linarith } },
-  have h_S : S = Icc (-8 : ℤ) 8,
+
+  -- Define the set of integers from -9 to 9
+  let T : finset ℤ := Icc (-9) 9,
+
+  -- Show that S is exactly the set of integers from -9 to 9
+  have hS : S = T,
   { ext x,
-    rw [h_bound, h_range] },
-  rw h_S,
-  simp,
+    rw [h, h_range],
+    exact mem_Icc },
+
+  -- Calculate the cardinality of the set T
+  have hT_card : T.card = 19,
+  { rw [card_Icc, int.to_nat_sub_of_le],
+    { norm_num },
+    { linarith } },
+
+  -- Conclude that S.card = 19
+  rw hS,
+  exact hT_card,
 end
