@@ -84,3 +84,43 @@
 [2]: https://huggingface.co/Goedel-LM/Goedel-Prover-SFT "Goedel-LM/Goedel-Prover-SFT · Hugging Face"
 [3]: https://huggingface.co/Goedel-LM/Goedel-Prover-DPO "Goedel-LM/Goedel-Prover-DPO · Hugging Face"
 [4]: https://huggingface.co/Goedel-LM/Goedel-Formalizer-32B-SonnetAnnotated?utm_source=chatgpt.com "Goedel-LM/Goedel-Formalizer-32B-SonnetAnnotated"
+
+
+
+
+いいよ！“Goedel-Prover”の流れを**最短で全体把握**できるように、やること→作る物→使い道の順で並べます。
+
+# ワークフロー（ざっくり7ステップ）
+
+1. **自然文の問題を集める**
+   　Numina / AoPS などの数学問題（自然言語）を入口の素材にする。目的は「Lean で学習できる形式データを大量に作る」こと。 ([arXiv][1])
+
+2. **“形式化器”で Lean 命題に翻訳 → Goedel-Pset-v1（164万件）**
+   　専用の**ステートメント形式化モデル**を学習し、自然文→Lean 4 の命題に自動変換。これで **1.64M** の formal statements から成る **Goedel-Pset-v1** を作る。翻訳の内容保持は LLM でチェック。 ([arXiv][2])
+
+3. **（重要）Lean で“命題そのもの”を機械検証**
+   　作られた Lean 命題は、Lean コンパイラ（カーネル）の型検査が通るか確認。以降も**正しさの判定は常に Lean** が担当（信頼境界）。 ([arXiv][2])
+
+4. **エキスパート反復：証明を回収してデータを巨大化**
+   　仮のプローバで各命題に**候補証明を多数生成**→Lean で検証→**通った証明だけ**を次の学習に追加——を**何周も反復**。その結果、**80万件超**の「命題＋正証明」から成る **Goedel-Pset-v1-solved** を得る。 ([arXiv][2])
+
+5. **最終プローバ（Goedel-Prover-SFT）を“教師ありのみ”で訓練**
+   　ベース（DeepSeek-Prover-V1.5-Base）に対し、上の **v1-solved** を使って**SFTだけ**で微調整。**生成は whole-proof**（生成中は Lean と非対話で、**全文の証明**を一発で出す方式）。 ([arXiv][2])
+
+6. **評価：Pass\@k（miniF2F / PutnamBench / Lean Workbook）**
+   　各問題につき N 本サンプル（例：32）を出し、**どれか1本でも Lean 検証を通れば成功**＝Pass\@N。
+   　結果：**miniF2F Pass\@32 = 57.6%（先行SOTA+7.6pt）**、**PutnamBench 7題（@512）**、**Lean Workbook 2.97万題の新規証明**。必要に応じ **DPO/RL** を足すと **Pass\@32が60%超**まで伸びるが、出力が冗長化しやすい傾向も解析。 ([arXiv][2])
+
+7. **公開：コード／モデル／データ**
+   　GitHub（評価スクリプト）、Hugging Face（SFT/DPOモデル、**Goedel-Pset-v1 / v1-solved**、Lean-workbook-proofs）を**フル公開**。再現・拡張がしやすい。 ([arXiv][2])
+
+---
+
+## 1行で言うと
+
+\*\*「自然文→Lean 命題（大量生成）」→「Lean で確かめながら証明を回収（反復）」→「教師ありだけで強い whole-proof プローバを完成」→「Pass\@k で評価・公開」\*\*という、データ拡張と機械検証を中心に回すワークフローです。 ([arXiv][2])
+
+必要なら、この流れを**あなたの環境用の具体コマンド列**（形式化 → 反復収集 → 学習 → 評価）に落として書き下ろします。
+
+[1]: https://arxiv.org/abs/2502.07640?utm_source=chatgpt.com "Goedel-Prover: A Frontier Model for Open-Source Automated Theorem Proving"
+[2]: https://arxiv.org/html/2502.07640v3 "Goedel-Prover: A Frontier Model for Open-Source Automated Theorem Proving"
