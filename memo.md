@@ -124,3 +124,68 @@
 
 [1]: https://arxiv.org/abs/2502.07640?utm_source=chatgpt.com "Goedel-Prover: A Frontier Model for Open-Source Automated Theorem Proving"
 [2]: https://arxiv.org/html/2502.07640v3 "Goedel-Prover: A Frontier Model for Open-Source Automated Theorem Proving"
+
+
+了解！“技術の中身”をできるだけ平易に、でも要点はしっかり押さえて説明します。
+
+# 技術的なポイントをやさしく
+
+## 1) まずはデータ作り（自動形式化）
+
+* 自然文の数学問題（Numinaなど）を \*\*Lean 4 の命題（statement）**に自動翻訳する**形式化器（formalizer）\*\*を2本用意。
+
+  * **Formalizer A**：Lean Workbook の「非形式 ↔ 形式」対で学習。
+  * **Formalizer B**：**Claude 3.5 Sonnet**が作成した対訳を使って学習。
+    2本を併用して**1,640,000件**の Lean 命題 **Goedel-Pset-v1** を作成。翻訳の“意味が保たれているか”は LLM でチェック（後述）。 ([arXiv][1])
+
+* 形式化の品質管理：
+
+  * **CCテスト**（Lean でコンパイルが通るか）と、**FCテスト**（自然文の意味が**忠実**か）を実施。
+  * FCは **Qwen2.5-72B-Instruct** に4回判定させてスコア化し、閾値未満は除外。各問題につき**A/B各8本=16本**生成→CC/FCを通った候補のみ残す運用。 ([arXiv][1])
+
+## 2) 証明データを“Leanで確かめて”増やす（エキスパート反復）
+
+* 初回は先行SOTA **DeepSeek-Prover-V1.5-RL**で**各命題あたり16候補**の**全文証明**を生成→**Lean コンパイラで検証**→**正答だけ**を集めて学習し直す。
+* 以降は自前の新モデルでさらに未解決を解いては学習…を**計8反復**。
+  その結果、命題1.64Mに対し**約0.93M**の「命題＋正しい証明」まで拡大（表：iter-9で **928k** solved）。 ([arXiv][1])
+
+## 3) 生成の流儀：**whole-proof（全文一発生成）**
+
+* 生成中は **Lean と対話せず**、最初から最後まで**完成した証明**を出力（タクティク逐次探索はしない）。正しさの判定は**最後に Lean で検証**して行う、という設計です。 ([arXiv][1])
+
+## 4) 学習レシピ：SFTが主役、RLは上乗せ検討
+
+* ベースは **DeepSeek-Prover-V1.5-Base**。収集した「命題＋証明」だけで\*\*教師あり微調整（SFT）\*\*した **Goedel-Prover-SFT** が主役。
+* さらに \*\*DPO / GRPO（RL）\*\*を上乗せすると **Pass\@32 が約+3pt**伸びる一方、
+
+  * 証明が**冗長化**（平均長が大幅増）、
+  * **特定のタクティク（例：`try`）の濫用**が増え、
+  * **試行回数を増やしたときの伸び（Pass\@3200など）が鈍る**＝出力多様性の低下が示唆、という挙動も解析。 ([arXiv][1])
+
+## 5) 評価と結果（Leanで機械検証→Pass\@k）
+
+* **miniF2F（Lean4, whole-proof）**：**Pass\@32 = 57.6%**（先行の DeepSeek-V1.5-RL を **+7.6pt**上回る）。**Pass\@3200 = 62.7%**、\*\*Pass\@25600 = 64.7%\*\*でも優位。 ([arXiv][1])
+* **PutnamBench**：\*\*7題（Pass\@512）\*\*でリーダーボード首位（同率含む）。注記：誤形式化の1題は除外。 ([arXiv][1])
+* **Lean Workbook**：**29.7K題**の新規正式証明を公開。 ([arXiv][1])
+* 評価の実行方法（公開スクリプト）：`-n` が Pass 本数、`-c` が Lean 検証の並列度。例：`eval.sh ... -n 32 -g 2 -c 128`。 ([GitHub][2])
+
+## 6) データ分布の注意点（どこで強い／弱い？）
+
+* **ProofNet / Mathlib4** と **miniF2F / Lean-Workbook / NuminaTest**の間に**分布差**あり。Mathlib4を入れると**ProofNetは上がるが miniF2F は下がる**など、評価集合により傾向が変わることを解析。 ([arXiv][1])
+
+---
+
+## まとめ（技術の芯）
+
+* **2本の形式化器で多様に命題を量産**→**CC/FCで意味も機械チェック**→**Lean検証で正答だけを回収**して**SFTを反復**、という\*\*「データ拡張×機械検証のループ」\*\*が核。
+* 生成は**whole-proof**でシンプル・高速、**判定はLeanカーネル**で厳密。**SFTだけでもSOTA**、RLは一長一短。 ([arXiv][1])
+
+必要なら、あなたの環境向けに
+
+* 形式化→反復収集→学習→評価までの**実行コマンド表**、
+* **CC/FC実装の最小プロンプト例**、
+* **Lean検証（`sorry`/公理検査）チェックリスト**
+  もそのまま使える形で用意します。
+
+[1]: https://arxiv.org/html/2502.07640v3 "Goedel-Prover: A Frontier Model for Open-Source Automated Theorem Proving"
+[2]: https://github.com/Goedel-LM/Goedel-Prover "GitHub - Goedel-LM/Goedel-Prover"
